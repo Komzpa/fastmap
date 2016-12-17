@@ -6,7 +6,7 @@
 \pset border 0
 \pset format unaligned
 \pset tuples_only on
-
+begin read only;
 -- This one is for debugging using http://tatiyants.com/pev/#/plans/new
 --explain ( analyze, costs, verbose, buffers, format json )
 --explain ( analyze, costs, verbose, buffers )
@@ -17,7 +17,7 @@ with params as (
         27.671985626220707 :: float as maxlon,
         53.886459293813054 :: float as maxlat
 ), direct_nodes as (
-    select n.*
+    select n.id, n.visible, n.version, n.changeset_id, n.timestamp, n.latitude, n.longitude
     from
         current_nodes n,
         params p
@@ -29,23 +29,23 @@ with params as (
         and n.visible
 ), all_request_ways as (
     select
-        distinct on (id) w.*
+        distinct on (id) w.id, w.visible, w.version, w.changeset_id, w.timestamp
     from
         direct_nodes n
         join current_way_nodes c on (c.node_id = n.id)
         join current_ways w on (w.id = c.way_id)
     where w.visible
 ), all_request_nodes as (
-    select n2.*
+    select n.id, n.visible, n.version, n.changeset_id, n.timestamp, n.latitude, n.longitude
     from
-        all_request_ways w2
-        join current_way_nodes c on (c.way_id = w2.id)
-        join current_nodes n2 on (n2.id = c.node_id)
+        all_request_ways w
+        join current_way_nodes c on (c.way_id = w.id)
+        join current_nodes n on (n.id = c.node_id)
     union
-    select *
-    from direct_nodes
+    select n.id, n.visible, n.version, n.changeset_id, n.timestamp, n.latitude, n.longitude
+    from direct_nodes n
 ), relations_from_ways_and_nodes as (
-    select distinct on (id) r.*
+    select distinct on (id) r.id, r.visible, r.version, r.changeset_id, r.timestamp
     from
         (
             select
@@ -60,14 +60,16 @@ with params as (
         ) wn
         join current_relation_members m on (wn.id = m.member_id and wn.type = m.member_type)
         join current_relations r on (m.relation_id = r.id)
+        where r.visible
 ), all_request_relations as (
-    select *
-    from relations_from_ways_and_nodes
+    select r.id, r.visible, r.version, r.changeset_id, r.timestamp
+    from relations_from_ways_and_nodes r
     union
-    select r.*
+    select r.id, r.visible, r.version, r.changeset_id, r.timestamp
     from relations_from_ways_and_nodes r2
         join current_relation_members rm on (r2.id = rm.member_id and rm.member_type = 'Relation')
         join current_relations r on (r.id = rm.relation_id)
+    where r.visible
 ), all_request_users as (
     select
         distinct on (changeset_id)
@@ -247,3 +249,4 @@ from (
     -- XML footer
     select '</osm>'
 ) repsonse;
+commit;
