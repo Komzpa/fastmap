@@ -80,13 +80,13 @@ with params as (
             then u.id
         else null end as uid
     from
-        (
-            select changeset_id
-            from all_request_nodes
-            union
+        ( -- we first know about all the ways, that's why they're earlier in union
             select changeset_id
             from all_request_ways
-            union
+            union all
+            select changeset_id
+            from all_request_nodes
+            union all
             select changeset_id
             from all_request_relations
         ) as rc
@@ -119,59 +119,72 @@ from (
                  ),
                  nt.tags
              ) line
-    from all_request_nodes n
-    join all_request_users u on (n.changeset_id = u.changeset_id)
-    join lateral (
-        select xmlagg(
-            xmlelement(
-                name tag,
-                xmlattributes (
-                    k as k,
-                    v as v
+        from all_request_nodes n
+        join all_request_users u on (n.changeset_id = u.changeset_id)
+        join lateral (
+            select xmlagg(
+                xmlelement(
+                    name tag,
+                    xmlattributes(
+                        k as k,
+                        v as v
+                    )
                 )
-        )
-    ) as tags
-from current_node_tags t
-where t.node_id = n.id
-) nt on true
-order by n.id
-) nodes
-union all
-select *
-from
-    (
+            ) as tags
+            from current_node_tags t
+            where t.node_id = n.id
+        ) nt on true
+        order by n.id
+    ) nodes
+    union all
+    -- ways
+    select *
+    from (
         select
-            xmlelement(name way,
-                       xmlattributes (
-                       id as id,
-                       visible as visible,
-                       version as version,
-                       w.changeset_id as changeset,
-                       to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                       u.name as user,
-                       u.uid as uid
-            ),
-            wt.tags,
-            nds.nodes
-    ) line
-from all_request_ways w
-join all_request_users u on ( w.changeset_id = u.changeset_id)
-join lateral (
-select xmlagg(xmlelement( name tag,
-xmlattributes (k as k, v as v)
-) order by k, v) as tags
-from current_way_tags t
-where t.way_id = w.id
-) wt on true
-join lateral (
-select xmlagg(xmlelement( name nd,
-xmlattributes (node_id as ref )
-) order by sequence_id) as nodes
-from current_way_nodes t
-where t.way_id = w.id
-) nds on true
-order by w.id
-) ways
+            xmlelement(
+                name way,
+                xmlattributes(
+                    id                                               as id,
+                    visible                                          as visible,
+                    version                                          as version,
+                    w.changeset_id                                   as changeset,
+                    to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
+                    u.name                                           as user,
+                    u.uid                                            as uid
+                ),
+                wt.tags,
+                nds.nodes
+            ) line
+        from all_request_ways w
+        join all_request_users u on ( w.changeset_id = u.changeset_id)
+        join lateral (
+            select xmlagg(
+                xmlelement(
+                    name tag,
+                    xmlattributes(
+                        k as k,
+                        v as v
+                    )
+                )
+            ) as tags
+            from current_way_tags t
+            where t.way_id = w.id
+        ) wt on true
+        join lateral (
+            select xmlagg(
+                xmlelement(
+                    name nd,
+                    xmlattributes(
+                        node_id as ref
+                    )
+                )
+                order by sequence_id
+            ) as nodes
+            from current_way_nodes t
+            where t.way_id = w.id
+        ) nds on true
+        order by w.id
+    ) ways
 union all
 select *
 from
