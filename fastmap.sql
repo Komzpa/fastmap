@@ -6,7 +6,6 @@
 \pset border 0
 \pset format unaligned
 \pset tuples_only on
-\echo '<?xml version="1.0" encoding="UTF-8"?><osm version="0.6" generator="FastMAP" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">'
 
 -- This one is for debugging using http://tatiyants.com/pev/#/plans/new
 --explain ( analyze, costs, verbose, buffers, format json )
@@ -94,14 +93,17 @@ with params as (
         join users u on (c.user_id = u.id)
     order by changeset_id
 )
-select line :: text
+select line
 from (
+    -- XML header
+    select '<?xml version="1.0" encoding="UTF-8"?><osm version="0.6" generator="FastMAP" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">' :: text as line
+    union all
     -- bounds header
-    select xmlelement(name bounds, xmlattributes(minlat, minlon, maxlat, maxlon)) as line
+    select xmlelement(name bounds, xmlattributes(minlat, minlon, maxlat, maxlon)) :: text as line
     from params p
     union all
     -- nodes
-    select *
+    select line :: text
     from (
          select
              xmlelement(
@@ -138,7 +140,7 @@ from (
     ) nodes
     union all
     -- ways
-    select *
+    select line :: text
     from (
         select
             xmlelement(
@@ -154,7 +156,7 @@ from (
                 ),
                 wt.tags,
                 nds.nodes
-            ) line
+            ) as line
         from all_request_ways w
         join all_request_users u on ( w.changeset_id = u.changeset_id)
         join lateral (
@@ -185,41 +187,63 @@ from (
         ) nds on true
         order by w.id
     ) ways
-union all
-select *
-from
+    union all
+    -- relations
+    select line :: text
+    from
     (
         select
-            xmlelement(name relation,
-                       xmlattributes (
-                       id as id,
-                       visible as visible,
-                       version as version,
-                       r.changeset_id as changeset,
-                       to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                       u.name as user,
-                       u.uid as uid
-            ),
-            rt.tags,
-            mbr.nodes
-    ) line
-from all_request_relations r
-join all_request_users u on (r.changeset_id = u.changeset_id)
-join lateral (
-select xmlagg(xmlelement( name tag,
-xmlattributes (k as k, v as v)
-) order by k, v) as tags
-from current_relation_tags t
-where t.relation_id = r.id
-) rt on true
-join lateral (
-select xmlagg(xmlelement( name member,
-xmlattributes (lower(member_type:: text ) as type, member_id as ref, member_role as role )
-) order by sequence_id) as nodes
-from current_relation_members t
-where t.relation_id = r.id
-) mbr on true
-order by r.id
-) relations
-) n;
-\echo '</osm>'
+            xmlelement(
+                name relation,
+                xmlattributes(
+                    id                                               as id,
+                    visible                                          as visible,
+                    version                                          as version,
+                    r.changeset_id                                   as changeset,
+                    to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
+                    u.name                                           as user,
+                    u.uid                                            as uid
+                ),
+                rt.tags,
+                mbr.nodes
+            ) line
+        from all_request_relations r
+        join all_request_users u on (r.changeset_id = u.changeset_id)
+        join lateral (
+            select xmlagg(
+                xmlelement(
+                    name tag,
+                    xmlattributes(
+                        k as k,
+                        v as v
+                    )
+                )
+            ) as tags
+            from current_relation_tags t
+            where t.relation_id = r.id
+        ) rt on true
+        join lateral (
+            select xmlagg(
+                xmlelement(
+                    name member,
+                    xmlattributes (
+                        case member_type
+                            when 'Way' then 'way'
+                            when 'Relation' then 'relation'
+                            when 'Node' then 'node'
+                        end         as type,
+                        member_id   as ref,
+                        member_role as role
+                    )
+                )
+                order by sequence_id
+            ) as nodes
+            from current_relation_members t
+            where t.relation_id = r.id
+        ) mbr on true
+        order by r.id
+    ) relations
+    union all
+    -- XML footer
+    select '</osm>'
+) repsonse;
