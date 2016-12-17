@@ -1,6 +1,6 @@
 -- \timing on
 --set enable_hashjoin to off;
-set enable_seqscan to off;
+
 
 \echo '<?xml version="1.0" encoding="UTF-8"?><osm version="0.6" generator="FastMAP" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">'
 --explain ( analyse, buffers )
@@ -91,15 +91,17 @@ select
                '1' as uid, -- FIXME
                (latitude / 1e7) :: numeric(10, 7) as lat,
                (longitude / 1e7) :: numeric(10, 7) as lon
-    ),xmlagg(xmlelement( name tag,
-xmlattributes (k as k, v as v)
-) order by k, v)
-
+    ),
+    nt.tags
 ) line
 from all_request_nodes n
-join current_node_tags t on (t.node_id = n.id)
-group by n.id, n.visible, n.version, n.changeset_id, n.timestamp, n.longitude, n.latitude
-
+join lateral (
+select xmlagg(xmlelement( name tag,
+xmlattributes (k as k, v as v)
+) order by k, v) as tags
+from current_node_tags t
+where t.node_id = n.id
+) nt on true
 union all
 select
     xmlelement(name way,
