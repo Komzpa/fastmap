@@ -8,7 +8,7 @@
 \pset tuples_only on
 begin read only;
 -- This one is for debugging using http://tatiyants.com/pev/#/plans/new
---explain ( analyze, costs, verbose, buffers, format json )
+--#explain ( analyze, costs, verbose, buffers, format json )
 --explain ( analyze, costs, verbose, buffers )
 with params as (
     select
