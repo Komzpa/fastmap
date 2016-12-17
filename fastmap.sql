@@ -96,39 +96,41 @@ with params as (
 )
 select line :: text
 from (
-         select xmlelement(name bounds, xmlattributes (
-                           minlat,
-                           minlon,
-                           maxlat,
-                           maxlon
-         )
-     ) as line
-from params p
-union all
-select *
-from (
+    -- bounds header
+    select xmlelement(name bounds, xmlattributes(minlat, minlon, maxlat, maxlon)) as line
+    from params p
+    union all
+    -- nodes
+    select *
+    from (
          select
              xmlelement(
                  name node,
-                 xmlattributes (
-                 id as id,
-                 visible as visible,
-                 version as version,
-                 n.changeset_id as changeset,
-                 to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                 u.name as user,
-                 u.uid as uid,
-                 (latitude / 1e7) :: numeric(10, 7) as lat,
-                 (longitude / 1e7) :: numeric(10, 7) as lon
-             ),
-             nt.tags
-     ) line
-from all_request_nodes n
-join all_request_users u on (n.changeset_id = u.changeset_id)
-join lateral (
-select xmlagg(xmlelement( name tag,
-xmlattributes (k as k, v as v)
-) order by k, v) as tags
+                 xmlattributes(
+                     id                                               as id,
+                     visible                                          as visible,
+                     version                                          as version,
+                     n.changeset_id                                   as changeset,
+                     to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
+                     u.name                                           as user,
+                     u.uid                                            as uid,
+                     (latitude / 1e7) :: numeric(10, 7)               as lat,
+                     (longitude / 1e7) :: numeric(10, 7)              as lon
+                 ),
+                 nt.tags
+             ) line
+    from all_request_nodes n
+    join all_request_users u on (n.changeset_id = u.changeset_id)
+    join lateral (
+        select xmlagg(
+            xmlelement(
+                name tag,
+                xmlattributes (
+                    k as k,
+                    v as v
+                )
+        )
+    ) as tags
 from current_node_tags t
 where t.node_id = n.id
 ) nt on true
