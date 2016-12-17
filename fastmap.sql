@@ -66,6 +66,30 @@ with params as (
         join current_relation_members rm on (r2.id = rm.member_id and rm.member_type = 'Relation')
         join current_relations r on (r.id = rm.relation_id)
     order by id
+), all_request_users as (
+    select
+        distinct
+        changeset_id,
+        case when u.data_public
+            then u.display_name
+        else null end as name,
+        case when u.data_public
+            then u.id
+        else null end as uid
+    from
+        (
+            select changeset_id
+            from all_request_nodes
+            union
+            select changeset_id
+            from all_request_ways
+            union
+            select changeset_id
+            from all_request_relations
+        ) as rc
+        join changesets c on (rc.changeset_id = c.id)
+        join users u on (c.user_id = u.id)
+
 )
 select line :: text
 from (
@@ -85,10 +109,10 @@ select
                id as id,
                visible as visible,
                version as version,
-               changeset_id as changeset,
+               n.changeset_id as changeset,
                to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-               'FIXME' as user,
-               '1' as uid, -- FIXME
+               u.name as user,
+               u.uid as uid,
                (latitude / 1e7) :: numeric(10, 7) as lat,
                (longitude / 1e7) :: numeric(10, 7) as lon
     ),
@@ -102,6 +126,7 @@ xmlattributes (k as k, v as v)
 from current_node_tags t
 where t.node_id = n.id
 ) nt on true
+left join all_request_users u on (n.changeset_id = u.changeset_id)
 union all
 select
     xmlelement(name way,
