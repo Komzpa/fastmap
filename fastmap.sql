@@ -132,14 +132,18 @@ select
     xmlelement(name way,
                xmlattributes (
                id as id,
-               version as version,
-               to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
                visible as visible,
-               changeset_id as changeset),
+               version as version,
+               w.changeset_id as changeset,
+               to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
+               u.name as user,
+               u.uid as uid
+    ),
     wt.tags,
     nds.nodes
 ) line
 from all_request_ways w
+left join all_request_users u on (w.changeset_id = u.changeset_id)
 join lateral (
 select xmlagg(xmlelement( name tag,
 xmlattributes (k as k, v as v)
@@ -159,14 +163,18 @@ select
     xmlelement(name relation,
                xmlattributes (
                id as id,
-               version as version,
-               to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
                visible as visible,
-               changeset_id as changeset),
+               version as version,
+               r.changeset_id as changeset,
+               to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
+               u.name as user,
+               u.uid as uid
+    ),
     rt.tags,
     mbr.nodes
 ) line
 from all_request_relations r
+left join all_request_users u on (r.changeset_id = u.changeset_id)
 join lateral (
 select xmlagg(xmlelement( name tag,
 xmlattributes (k as k, v as v)
