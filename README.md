@@ -1,5 +1,11 @@
 # fastmap
-Fast OSM API /map call implementation in pure SQL
+Fast OSM API /map call implementation in pure SQL.
+
+## why
+
+This /map call takes 22 seconds to complete on osm.org. [Current cgimap implementation](https://github.com/zerebubuth/openstreetmap-cgimap/blob/ff414930a7db284f00dfb91bd3e000cb126e5d69/src/backend/apidb/readonly_pgsql_selection.cpp) needs ~2 network round trips between database and application, effectively limiting API speed to ~2000 objects per second.
+
+Details in Operations ticket: https://github.com/openstreetmap/operations/issues/135
 
 ## development cycle quick start
 
