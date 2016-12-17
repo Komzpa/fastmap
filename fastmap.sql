@@ -1,10 +1,10 @@
 -- \timing on
 --set enable_hashjoin to off;
-
+set enable_seqscan to off;
 
 \echo '<?xml version="1.0" encoding="UTF-8"?><osm version="0.6" generator="FastMAP" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">'
-explain ( analyse, buffers )
---copy (
+--explain ( analyse, buffers )
+copy (
 with params as (
     select
         27.61649608612061 :: float  as minlon,
@@ -91,17 +91,15 @@ select
                '1' as uid, -- FIXME
                (latitude / 1e7) :: numeric(10, 7) as lat,
                (longitude / 1e7) :: numeric(10, 7) as lon
-    ),
-    nt.tags
+    ),xmlagg(xmlelement( name tag,
+xmlattributes (k as k, v as v)
+) order by k, v)
+
 ) line
 from all_request_nodes n
-join lateral (
-select xmlagg(xmlelement( name tag,
-xmlattributes (k as k, v as v)
-) order by k, v) as tags
-from current_node_tags t
-where t.node_id = n.id
-) nt on true
+join current_node_tags t on (t.node_id = n.id)
+group by n.id, n.visible, n.version, n.changeset_id, n.timestamp, n.longitude, n.latitude
+
 union all
 select
     xmlelement(name way,
@@ -157,6 +155,6 @@ from current_relation_members t
 where t.relation_id = r.id
 ) mbr on true
 ) n
---) to stdout;
+) to stdout;
 ;
 \echo '</osm>'
