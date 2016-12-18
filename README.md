@@ -28,6 +28,10 @@ git diff
 
 ## getting complete database schema
 
+To have a look at schema, there is SVG on wiki:
+
+![Datanbase schema](https://wiki.openstreetmap.org/w/images/thumb/5/58/OSM_DB_Schema_2016-12-13.svg/4529px-OSM_DB_Schema_2016-12-13.svg.png)
+
 We believe there is postgres database `gis`, user `gis`, accepting trust connections on localhost.
 
 ```bash
