@@ -24,6 +24,7 @@ with params as (
     where
         point(longitude :: float / 1e7 :: float, latitude :: float / 1e7 :: float) <@
         box(point(minlon, minlat), point(maxlon, maxlat))
+        -- and n.tile in (...) - dropped in favor of SP-GiST, can be returned
         --         and n.latitude between minlat and maxlat
         --         and n.longitude between minlon and maxlon
         and n.visible
@@ -74,12 +75,8 @@ with params as (
     select
         distinct on (changeset_id)
         changeset_id,
-        case when u.data_public
-            then u.display_name
-        else null end as name,
-        case when u.data_public
-            then u.id
-        else null end as uid
+        u.display_name as name,
+        u.id           as uid
     from
         ( -- we first know about all the ways, that's why they're earlier in union
             select changeset_id
@@ -92,7 +89,7 @@ with params as (
             from all_request_relations
         ) as rc
         join changesets c on (rc.changeset_id = c.id)
-        join users u on (c.user_id = u.id)
+        left join users u on (c.user_id = u.id)
     order by changeset_id
 )
 select line
