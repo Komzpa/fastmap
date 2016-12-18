@@ -2,7 +2,7 @@ drop function if exists get_way_by_id( bigint );
 create or replace function get_way_by_id(
     p_id bigint
 )
-    returns setof osm_way parallel safe language sql as $$
+    returns setof osm_way stable parallel safe language sql as $$
 select
     n.id,
     n.visible,

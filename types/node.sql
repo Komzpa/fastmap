@@ -15,7 +15,7 @@ create type osm_node as (
 create function _osm_node_to_xml(
     p_node osm_node
 )
-    returns xml parallel safe language sql as $$
+    returns xml stable parallel safe language sql as $$
 select
     xmlelement(
         name node,

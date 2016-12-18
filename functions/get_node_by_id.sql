@@ -2,7 +2,7 @@ drop function if exists get_node_by_id( bigint );
 create or replace function get_node_by_id(
     p_id bigint
 )
-    returns setof osm_node parallel safe language sql as $$
+    returns setof osm_node stable parallel safe language sql as $$
 select
     n.id,
     n.visible,

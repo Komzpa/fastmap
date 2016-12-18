@@ -7,7 +7,7 @@ create type osm_tag as (
 create function _osm_tag_to_xml(
     p_tag osm_tag
 )
-    returns xml parallel safe language sql as $$
+    returns xml stable parallel safe language sql as $$
 select xmlelement(
     name tag,
     xmlattributes (
@@ -24,7 +24,7 @@ with function _osm_tag_to_xml(osm_tag);
 create function _osm_tag_array_to_xml(
     p_tags osm_tag []
 )
-    returns xml parallel safe language sql as $$
+    returns xml stable parallel safe language sql as $$
 select xmlagg(
     xmlelement(
         name tag,

@@ -14,7 +14,7 @@ create type osm_way as (
 create function _osm_way_to_xml(
     p_way osm_way
 )
-    returns xml parallel safe language sql as $$
+    returns xml stable parallel safe language sql as $$
 select
     xmlelement(
         name way,
