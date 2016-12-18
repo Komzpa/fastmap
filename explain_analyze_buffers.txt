@@ -1,295 +1,161 @@
-Append  (cost=38895.60..266462.50 rows=15500 width=32) (actual time=0.001..1234.399 rows=48343 loops=1)
-  Buffers: shared hit=734387
+Append  (cost=1044052.29..5308738.66 rows=13885003 width=32) (actual time=0.001..4746.672 rows=48343 loops=1)
+  Buffers: shared hit=572799 read=1504
   CTE params
-    ->  Result  (cost=0.00..0.01 rows=1 width=32) (actual time=0.001..0.001 rows=1 loops=1)
+    ->  Result  (cost=0.00..0.01 rows=1 width=32) (actual time=0.000..0.000 rows=1 loops=1)
           Output: '27.6164960861206'::double precision, '53.853792295637'::double precision, '27.6719856262207'::double precision, '53.8864592938131'::double precision
   CTE direct_nodes
-    ->  Nested Loop  (cost=25.45..2014.06 rows=665 width=41) (actual time=6.338..16.997 rows=37274 loops=1)
-          Output: n_1.id, n_1.visible, n_1.version, n_1.changeset_id, n_1."timestamp", n_1.latitude, n_1.longitude
-          Buffers: shared hit=2952
-          ->  CTE Scan on params p_1  (cost=0.00..0.02 rows=1 width=32) (actual time=0.001..0.001 rows=1 loops=1)
-                Output: p_1.minlon, p_1.minlat, p_1.maxlon, p_1.maxlat
-          ->  Bitmap Heap Scan on public.current_nodes n_1  (cost=25.45..2007.39 rows=665 width=41) (actual time=6.335..11.648 rows=37274 loops=1)
-                Output: n_1.id, n_1.latitude, n_1.longitude, n_1.changeset_id, n_1.visible, n_1."timestamp", n_1.tile, n_1.version
-                Recheck Cond: ((point(((n_1.longitude)::double precision / '10000000'::double precision), ((n_1.latitude)::double precision / '10000000'::double precision)) <@ box(point(p_1.minlon, p_1.minlat), point(p_1.maxlon, p_1.maxlat))) AND n_1.visible)
-                Heap Blocks: exact=473
-                Buffers: shared hit=2952
-                ->  Bitmap Index Scan on current_nodes_point_longitude_latitude_spgist_visible  (cost=0.00..25.28 rows=665 width=0) (actual time=6.278..6.278 rows=37274 loops=1)
-                      Index Cond: (point(((n_1.longitude)::double precision / '10000000'::double precision), ((n_1.latitude)::double precision / '10000000'::double precision)) <@ box(point(p_1.minlon, p_1.minlat), point(p_1.maxlon, p_1.maxlat)))
-                      Buffers: shared hit=2479
+    ->  CTE Scan on params  (cost=0.00..5.27 rows=1000 width=32) (actual time=333.908..372.562 rows=37274 loops=1)
+          Output: get_nodes_by_box(params.minlon, params.minlat, params.maxlon, params.maxlat)
+          Buffers: shared hit=231144
   CTE all_request_ways
-    ->  Unique  (cost=6657.21..6662.78 rows=1114 width=33) (actual time=180.712..191.612 rows=7725 loops=1)
-          Output: w_1.id, w_1.visible, w_1.version, w_1.changeset_id, w_1."timestamp"
-          Buffers: shared hit=302738
-          ->  Sort  (cost=6657.21..6660.00 rows=1114 width=33) (actual time=180.711..187.897 rows=48344 loops=1)
-                Output: w_1.id, w_1.visible, w_1.version, w_1.changeset_id, w_1."timestamp"
-                Sort Key: w_1.id
-                Sort Method: quicksort  Memory: 5313kB
-                Buffers: shared hit=302738
-                ->  Nested Loop  (cost=0.72..6600.84 rows=1114 width=33) (actual time=6.359..168.675 rows=48344 loops=1)
-                      Output: w_1.id, w_1.visible, w_1.version, w_1.changeset_id, w_1."timestamp"
-                      Buffers: shared hit=302738
-                      ->  Nested Loop  (cost=0.42..6237.22 rows=1114 width=8) (actual time=6.355..98.812 rows=48344 loops=1)
-                            Output: c.way_id
-                            Buffers: shared hit=157526
-                            ->  CTE Scan on direct_nodes n_2  (cost=0.00..13.30 rows=665 width=8) (actual time=6.339..28.332 rows=37274 loops=1)
-                                  Output: n_2.id, n_2.visible, n_2.version, n_2.changeset_id, n_2."timestamp", n_2.latitude, n_2.longitude
-                                  Buffers: shared hit=2952
-                            ->  Index Scan using current_way_nodes_node_idx on public.current_way_nodes c  (cost=0.42..9.34 rows=2 width=16) (actual time=0.001..0.002 rows=1 loops=37274)
-                                  Output: c.way_id, c.node_id, c.sequence_id
-                                  Index Cond: (c.node_id = n_2.id)
-                                  Buffers: shared hit=154574
-                      ->  Index Scan using current_ways_pkey on public.current_ways w_1  (cost=0.29..0.32 rows=1 width=33) (actual time=0.001..0.001 rows=1 loops=48344)
-                            Output: w_1.id, w_1.changeset_id, w_1."timestamp", w_1.visible, w_1.version
-                            Index Cond: (w_1.id = c.way_id)
-                            Filter: w_1.visible
-                            Buffers: shared hit=145212
+    ->  Unique  (cost=9126.68..9135.21 rows=1706 width=8) (actual time=500.243..515.542 rows=7725 loops=1)
+          Output: c.way_id
+          Buffers: shared hit=385718
+          ->  Sort  (cost=9126.68..9130.95 rows=1706 width=8) (actual time=500.243..508.098 rows=48344 loops=1)
+                Output: c.way_id
+                Sort Key: c.way_id
+                Sort Method: quicksort  Memory: 3803kB
+                Buffers: shared hit=385718
+                ->  Nested Loop  (cost=0.42..9035.10 rows=1706 width=8) (actual time=333.924..487.237 rows=48344 loops=1)
+                      Output: c.way_id
+                      Buffers: shared hit=385718
+                      ->  CTE Scan on direct_nodes n_1  (cost=0.00..20.00 rows=1000 width=32) (actual time=333.909..385.562 rows=37274 loops=1)
+                            Output: n_1.node
+                            Buffers: shared hit=231144
+                      ->  Index Scan using current_way_nodes_node_idx on public.current_way_nodes c  (cost=0.42..9.00 rows=2 width=16) (actual time=0.002..0.002 rows=1 loops=37274)
+                            Output: c.way_id, c.node_id, c.sequence_id
+                            Index Cond: (c.node_id = (n_1.node).id)
+                            Buffers: shared hit=154574
   CTE all_request_nodes
-    ->  HashAggregate  (cost=23795.72..23938.24 rows=14252 width=41) (actual time=361.746..373.780 rows=40472 loops=1)
-          Output: n_3.id, n_3.visible, n_3.version, n_3.changeset_id, n_3."timestamp", n_3.latitude, n_3.longitude
-          Group Key: n_3.id, n_3.visible, n_3.version, n_3.changeset_id, n_3."timestamp", n_3.latitude, n_3.longitude
-          Buffers: shared hit=542196
-          ->  Append  (cost=0.85..23546.31 rows=14252 width=41) (actual time=180.727..321.531 rows=89214 loops=1)
-                Buffers: shared hit=542196
-                ->  Nested Loop  (cost=0.85..23390.49 rows=13587 width=41) (actual time=180.725..312.494 rows=51940 loops=1)
-                      Output: n_3.id, n_3.visible, n_3.version, n_3.changeset_id, n_3."timestamp", n_3.latitude, n_3.longitude
-                      Buffers: shared hit=542196
-                      ->  Nested Loop  (cost=0.42..16701.85 rows=13587 width=8) (actual time=180.720..220.514 rows=51940 loops=1)
-                            Output: c_1.node_id
-                            Buffers: shared hit=334144
-                            ->  CTE Scan on all_request_ways w_2  (cost=0.00..22.28 rows=1114 width=8) (actual time=180.713..192.947 rows=7725 loops=1)
-                                  Output: w_2.id, w_2.visible, w_2.version, w_2.changeset_id, w_2."timestamp"
-                                  Buffers: shared hit=302738
-                            ->  Index Scan using current_way_nodes_pkey on public.current_way_nodes c_1  (cost=0.42..14.85 rows=12 width=16) (actual time=0.002..0.003 rows=7 loops=7725)
-                                  Output: c_1.way_id, c_1.node_id, c_1.sequence_id
-                                  Index Cond: (c_1.way_id = w_2.id)
-                                  Buffers: shared hit=31406
-                      ->  Index Scan using current_nodes_pkey1 on public.current_nodes n_3  (cost=0.42..0.48 rows=1 width=41) (actual time=0.001..0.001 rows=1 loops=51940)
-                            Output: n_3.id, n_3.latitude, n_3.longitude, n_3.changeset_id, n_3.visible, n_3."timestamp", n_3.tile, n_3.version
-                            Index Cond: (n_3.id = c_1.node_id)
-                            Buffers: shared hit=208052
-                ->  CTE Scan on direct_nodes n_4  (cost=0.00..13.30 rows=665 width=41) (actual time=0.001..2.844 rows=37274 loops=1)
-                      Output: n_4.id, n_4.visible, n_4.version, n_4.changeset_id, n_4."timestamp", n_4.latitude, n_4.longitude
+    ->  Append  (cost=27510.27..180920.27 rows=10227000 width=32) (actual time=1426.841..1451.311 rows=40472 loops=1)
+          Buffers: shared hit=436888 read=1504
+          ->  Subquery Scan on "*SELECT* 1"  (cost=27510.27..180900.27 rows=10226000 width=32) (actual time=1426.841..1430.122 rows=3198 loops=1)
+                Output: "*SELECT* 1".node
+                Buffers: shared hit=436888 read=1504
+                ->  Unique  (cost=27510.27..78640.27 rows=10226000 width=40) (actual time=1426.840..1429.456 rows=3198 loops=1)
+                      Output: (get_node_by_id(c_1.node_id)), c_1.node_id
+                      Buffers: shared hit=436888 read=1504
+                      ->  Sort  (cost=27510.27..27535.84 rows=10226 width=40) (actual time=1426.840..1428.171 rows=3596 loops=1)
+                            Output: (get_node_by_id(c_1.node_id)), c_1.node_id
+                            Sort Key: c_1.node_id
+                            Sort Method: quicksort  Memory: 785kB
+                            Buffers: shared hit=436888 read=1504
+                            ->  Hash Join  (cost=21959.06..26829.22 rows=10226 width=40) (actual time=1170.925..1422.265 rows=3596 loops=1)
+                                  Output: get_node_by_id(c_1.node_id), c_1.node_id
+                                  Hash Cond: (w_1.id = c_1.way_id)
+                                  Buffers: shared hit=436888 read=1504
+                                  ->  CTE Scan on all_request_ways w_1  (cost=0.00..34.12 rows=1706 width=8) (actual time=500.246..517.569 rows=7725 loops=1)
+                                        Output: w_1.id
+                                        Buffers: shared hit=385718
+                                  ->  Hash  (cost=16501.21..16501.21 rows=436628 width=16) (actual time=667.646..667.646 rows=824913 loops=1)
+                                        Output: c_1.node_id, c_1.way_id
+                                        Buckets: 1048576 (originally 524288)  Batches: 1 (originally 1)  Memory Usage: 46860kB
+                                        Buffers: shared hit=4059 read=1504
+                                        ->  Seq Scan on public.current_way_nodes c_1  (cost=22.50..16501.21 rows=436628 width=16) (actual time=30.028..439.532 rows=824913 loops=1)
+                                              Output: c_1.node_id, c_1.way_id
+                                              Filter: (NOT (hashed SubPlan 4))
+                                              Rows Removed by Filter: 48344
+                                              Buffers: shared hit=4059 read=1504
+                                              SubPlan 4
+                                                ->  CTE Scan on direct_nodes n_2  (cost=0.00..20.00 rows=1000 width=8) (actual time=0.003..13.127 rows=37274 loops=1)
+                                                      Output: (n_2.node).id
+          ->  CTE Scan on direct_nodes n_3  (cost=0.00..20.00 rows=1000 width=32) (actual time=0.001..11.971 rows=37274 loops=1)
+                Output: n_3.node
   CTE relations_from_ways_and_nodes
-    ->  Unique  (cost=2911.67..2912.31 rows=128 width=33) (actual time=28.523..28.740 rows=139 loops=1)
-          Output: r_1.id, r_1.visible, r_1.version, r_1.changeset_id, r_1."timestamp"
-          Buffers: shared hit=4005
-          ->  Sort  (cost=2911.67..2911.99 rows=128 width=33) (actual time=28.522..28.650 rows=1219 loops=1)
-                Output: r_1.id, r_1.visible, r_1.version, r_1.changeset_id, r_1."timestamp"
-                Sort Key: r_1.id
-                Sort Method: quicksort  Memory: 144kB
-                Buffers: shared hit=4005
-                ->  Nested Loop  (cost=1330.23..2907.19 rows=128 width=33) (actual time=11.679..28.242 rows=1219 loops=1)
-                      Output: r_1.id, r_1.visible, r_1.version, r_1.changeset_id, r_1."timestamp"
-                      Buffers: shared hit=4005
-                      ->  Hash Join  (cost=1329.95..2867.83 rows=128 width=8) (actual time=11.666..26.638 rows=1219 loops=1)
-                            Output: m.relation_id
-                            Hash Cond: ((all_request_ways.id = m.member_id) AND (('Way'::nwr_enum) = m.member_type))
-                            Buffers: shared hit=325
-                            ->  Append  (cost=0.00..307.32 rows=15366 width=12) (actual time=0.002..8.183 rows=48197 loops=1)
-                                  ->  CTE Scan on all_request_ways  (cost=0.00..22.28 rows=1114 width=12) (actual time=0.002..0.846 rows=7725 loops=1)
-                                        Output: all_request_ways.id, 'Way'::nwr_enum
-                                  ->  CTE Scan on all_request_nodes  (cost=0.00..285.04 rows=14252 width=12) (actual time=0.000..4.318 rows=40472 loops=1)
-                                        Output: all_request_nodes.id, 'Node'::nwr_enum
-                            ->  Hash  (cost=725.18..725.18 rows=40318 width=20) (actual time=11.472..11.472 rows=40318 loops=1)
-                                  Output: m.member_id, m.member_type, m.relation_id
-                                  Buckets: 65536  Batches: 1  Memory Usage: 2717kB
+    ->  Unique  (cost=853026.08..853452.01 rows=1901 width=8) (actual time=46.325..46.524 rows=139 loops=1)
+          Output: m.relation_id
+          Buffers: shared hit=325
+          ->  Sort  (cost=853026.08..853239.04 rows=85186 width=8) (actual time=46.324..46.439 rows=1219 loops=1)
+                Output: m.relation_id
+                Sort Key: m.relation_id
+                Sort Method: quicksort  Memory: 106kB
+                Buffers: shared hit=325
+                ->  Hash Join  (cost=1329.95..846050.05 rows=85186 width=8) (actual time=18.826..46.018 rows=1219 loops=1)
+                      Output: m.relation_id
+                      Hash Cond: ((all_request_ways.id = m.member_id) AND (('Way'::nwr_enum) = m.member_type))
+                      Buffers: shared hit=325
+                      ->  Append  (cost=0.00..204574.12 rows=10228706 width=12) (actual time=0.001..14.299 rows=48197 loops=1)
+                            ->  CTE Scan on all_request_ways  (cost=0.00..34.12 rows=1706 width=12) (actual time=0.001..1.396 rows=7725 loops=1)
+                                  Output: all_request_ways.id, 'Way'::nwr_enum
+                            ->  CTE Scan on all_request_nodes n_4  (cost=0.00..204540.00 rows=10227000 width=12) (actual time=0.004..9.183 rows=40472 loops=1)
+                                  Output: (n_4.node).id, 'Node'::nwr_enum
+                      ->  Hash  (cost=725.18..725.18 rows=40318 width=20) (actual time=18.611..18.611 rows=40318 loops=1)
+                            Output: m.relation_id, m.member_id, m.member_type
+                            Buckets: 65536  Batches: 1  Memory Usage: 2560kB
+                            Buffers: shared hit=322
+                            ->  Seq Scan on public.current_relation_members m  (cost=0.00..725.18 rows=40318 width=20) (actual time=0.007..7.793 rows=40318 loops=1)
+                                  Output: m.relation_id, m.member_id, m.member_type
                                   Buffers: shared hit=322
-                                  ->  Seq Scan on public.current_relation_members m  (cost=0.00..725.18 rows=40318 width=20) (actual time=0.008..5.107 rows=40318 loops=1)
-                                        Output: m.member_id, m.member_type, m.relation_id
-                                        Buffers: shared hit=322
-                      ->  Index Scan using current_relations_id_idx on public.current_relations r_1  (cost=0.28..0.30 rows=1 width=33) (actual time=0.001..0.001 rows=1 loops=1219)
-                            Output: r_1.id, r_1.changeset_id, r_1."timestamp", r_1.visible, r_1.version
-                            Index Cond: (r_1.id = m.relation_id)
-                            Buffers: shared hit=3680
   CTE all_request_relations
-    ->  HashAggregate  (cost=366.33..367.64 rows=131 width=33) (actual time=29.159..29.176 rows=143 loops=1)
-          Output: r_2.id, r_2.visible, r_2.version, r_2.changeset_id, r_2."timestamp"
-          Group Key: r_2.id, r_2.visible, r_2.version, r_2.changeset_id, r_2."timestamp"
-          Buffers: shared hit=4182
-          ->  Append  (cost=0.00..364.69 rows=131 width=33) (actual time=28.525..29.089 rows=191 loops=1)
-                Buffers: shared hit=4182
-                ->  CTE Scan on relations_from_ways_and_nodes r_2  (cost=0.00..2.56 rows=128 width=33) (actual time=28.524..28.752 rows=139 loops=1)
-                      Output: r_2.id, r_2.visible, r_2.version, r_2.changeset_id, r_2."timestamp"
-                      Buffers: shared hit=4005
-                ->  Nested Loop  (cost=25.57..360.82 rows=3 width=33) (actual time=0.105..0.322 rows=52 loops=1)
-                      Output: r_3.id, r_3.visible, r_3.version, r_3.changeset_id, r_3."timestamp"
-                      Buffers: shared hit=177
-                      ->  Hash Join  (cost=25.29..359.42 rows=3 width=8) (actual time=0.102..0.256 rows=52 loops=1)
-                            Output: rm.relation_id
-                            Hash Cond: (rm.member_id = r2.id)
+    ->  HashAggregate  (cost=520.00..539.52 rows=1952 width=8) (actual time=46.926..46.942 rows=143 loops=1)
+          Output: r_1.id
+          Group Key: r_1.id
+          Buffers: shared hit=346
+          ->  Append  (cost=0.00..515.12 rows=1952 width=8) (actual time=46.327..46.882 rows=191 loops=1)
+                Buffers: shared hit=346
+                ->  CTE Scan on relations_from_ways_and_nodes r_1  (cost=0.00..38.02 rows=1901 width=8) (actual time=46.326..46.541 rows=139 loops=1)
+                      Output: r_1.id
+                      Buffers: shared hit=325
+                ->  Hash Join  (cost=359.64..457.58 rows=51 width=8) (actual time=0.296..0.335 rows=52 loops=1)
+                      Output: rm.relation_id
+                      Hash Cond: (r2.id = rm.member_id)
+                      Buffers: shared hit=21
+                      ->  CTE Scan on relations_from_ways_and_nodes r2  (cost=0.00..38.02 rows=1901 width=8) (actual time=0.000..0.005 rows=139 loops=1)
+                            Output: r2.id
+                      ->  Hash  (cost=351.49..351.49 rows=652 width=16) (actual time=0.274..0.274 rows=649 loops=1)
+                            Output: rm.relation_id, rm.member_id
+                            Buckets: 1024  Batches: 1  Memory Usage: 39kB
                             Buffers: shared hit=21
-                            ->  Bitmap Heap Scan on public.current_relation_members rm  (cost=21.13..352.89 rows=625 width=16) (actual time=0.048..0.145 rows=649 loops=1)
-                                  Output: rm.relation_id, rm.member_type, rm.member_id, rm.member_role, rm.sequence_id
+                            ->  Bitmap Heap Scan on public.current_relation_members rm  (cost=21.34..351.49 rows=652 width=16) (actual time=0.060..0.188 rows=649 loops=1)
+                                  Output: rm.relation_id, rm.member_id
                                   Recheck Cond: (rm.member_type = 'Relation'::nwr_enum)
                                   Heap Blocks: exact=16
                                   Buffers: shared hit=21
-                                  ->  Bitmap Index Scan on current_relation_members_member_idx  (cost=0.00..20.98 rows=625 width=0) (actual time=0.043..0.043 rows=649 loops=1)
+                                  ->  Bitmap Index Scan on current_relation_members_member_idx  (cost=0.00..21.18 rows=652 width=0) (actual time=0.054..0.054 rows=649 loops=1)
                                         Index Cond: (rm.member_type = 'Relation'::nwr_enum)
                                         Buffers: shared hit=5
-                            ->  Hash  (cost=2.56..2.56 rows=128 width=8) (actual time=0.033..0.033 rows=139 loops=1)
-                                  Output: r2.id
-                                  Buckets: 1024  Batches: 1  Memory Usage: 14kB
-                                  ->  CTE Scan on relations_from_ways_and_nodes r2  (cost=0.00..2.56 rows=128 width=8) (actual time=0.000..0.016 rows=139 loops=1)
-                                        Output: r2.id
-                      ->  Index Scan using current_relations_id_idx on public.current_relations r_3  (cost=0.28..0.46 rows=1 width=33) (actual time=0.001..0.001 rows=1 loops=52)
-                            Output: r_3.id, r_3.changeset_id, r_3."timestamp", r_3.visible, r_3.version
-                            Index Cond: (r_3.id = rm.relation_id)
-                            Buffers: shared hit=156
-  CTE all_request_users
-    ->  Unique  (cost=2923.09..3000.57 rows=200 width=48) (actual time=100.386..109.745 rows=1970 loops=1)
-          Output: all_request_ways_1.changeset_id, (CASE WHEN u_3.data_public THEN u_3.display_name ELSE NULL::character varying END), (CASE WHEN u_3.data_public THEN u_3.id ELSE NULL::bigint END)
-          Buffers: shared hit=4593
-          ->  Sort  (cost=2923.09..2961.83 rows=15497 width=48) (actual time=100.384..106.490 rows=48340 loops=1)
-                Output: all_request_ways_1.changeset_id, (CASE WHEN u_3.data_public THEN u_3.display_name ELSE NULL::character varying END), (CASE WHEN u_3.data_public THEN u_3.id ELSE NULL::bigint END)
-                Sort Key: all_request_ways_1.changeset_id
-                Sort Method: quicksort  Memory: 5314kB
-                Buffers: shared hit=4593
-                ->  Hash Join  (cost=1108.41..1844.52 rows=15497 width=48) (actual time=8.576..89.694 rows=48340 loops=1)
-                      Output: all_request_ways_1.changeset_id, CASE WHEN u_3.data_public THEN u_3.display_name ELSE NULL::character varying END, CASE WHEN u_3.data_public THEN u_3.id ELSE NULL::bigint END
-                      Hash Cond: (c_2.user_id = u_3.id)
-                      Buffers: shared hit=4593
-                      ->  Hash Join  (cost=952.95..1475.97 rows=15497 width=16) (actual time=7.766..77.041 rows=48340 loops=1)
-                            Output: all_request_ways_1.changeset_id, c_2.user_id
-                            Hash Cond: (all_request_ways_1.changeset_id = c_2.id)
-                            Buffers: shared hit=4482
-                            ->  Append  (cost=0.00..309.94 rows=15497 width=8) (actual time=0.001..57.955 rows=48340 loops=1)
-                                  Buffers: shared hit=4182
-                                  ->  CTE Scan on all_request_ways all_request_ways_1  (cost=0.00..22.28 rows=1114 width=8) (actual time=0.000..0.857 rows=7725 loops=1)
-                                        Output: all_request_ways_1.changeset_id
-                                  ->  CTE Scan on all_request_nodes all_request_nodes_1  (cost=0.00..285.04 rows=14252 width=8) (actual time=0.001..24.389 rows=40472 loops=1)
-                                        Output: all_request_nodes_1.changeset_id
-                                  ->  CTE Scan on all_request_relations  (cost=0.00..2.62 rows=131 width=8) (actual time=29.160..29.224 rows=143 loops=1)
-                                        Output: all_request_relations.changeset_id
-                                        Buffers: shared hit=4182
-                            ->  Hash  (cost=590.20..590.20 rows=29020 width=16) (actual time=7.680..7.680 rows=29020 loops=1)
-                                  Output: c_2.id, c_2.user_id
-                                  Buckets: 32768  Batches: 1  Memory Usage: 1617kB
-                                  Buffers: shared hit=300
-                                  ->  Seq Scan on public.changesets c_2  (cost=0.00..590.20 rows=29020 width=16) (actual time=0.005..3.687 rows=29020 loops=1)
-                                        Output: c_2.id, c_2.user_id
-                                        Buffers: shared hit=300
-                      ->  Hash  (cost=130.76..130.76 rows=1976 width=21) (actual time=0.794..0.794 rows=1976 loops=1)
-                            Output: u_3.data_public, u_3.display_name, u_3.id
-                            Buckets: 2048  Batches: 1  Memory Usage: 127kB
-                            Buffers: shared hit=111
-                            ->  Seq Scan on public.users u_3  (cost=0.00..130.76 rows=1976 width=21) (actual time=0.027..0.498 rows=1976 loops=1)
-                                  Output: u_3.data_public, u_3.display_name, u_3.id
-                                  Buffers: shared hit=111
-  ->  Result  (cost=0.00..0.01 rows=1 width=32) (actual time=0.000..0.000 rows=1 loops=1)
+  ->  Result  (cost=0.00..0.01 rows=1 width=32) (actual time=0.001..0.001 rows=1 loops=1)
         Output: '<?xml version="1.0" encoding="UTF-8"?><osm version="0.6" generator="FastMAP" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/">'::text
-  ->  CTE Scan on params p  (cost=0.00..0.02 rows=1 width=32) (actual time=0.079..0.079 rows=1 loops=1)
+  ->  CTE Scan on params p  (cost=0.00..0.02 rows=1 width=32) (actual time=0.092..0.093 rows=1 loops=1)
         Output: (XMLELEMENT(NAME bounds, XMLATTRIBUTES(p.minlat AS minlat, p.minlon AS minlon, p.maxlat AS maxlat, p.maxlon AS maxlon)))::text
-  ->  Subquery Scan on nodes  (cost=173189.60..173367.75 rows=14252 width=32) (actual time=888.711..900.261 rows=40472 loops=1)
+  ->  Subquery Scan on nodes  (cost=4079850.96..4207688.46 rows=10227000 width=32) (actual time=2761.825..2771.231 rows=40472 loops=1)
         Output: (nodes.line)::text
-        Buffers: shared hit=670160
-        ->  Sort  (cost=173189.60..173225.23 rows=14252 width=40) (actual time=888.710..895.902 rows=40472 loops=1)
-              Output: (XMLELEMENT(NAME node, XMLATTRIBUTES(n.id AS id, n.visible AS visible, n.version AS version, n.changeset_id AS changeset, to_char(n."timestamp", 'YYYY-MM-DD"T"HH24:MI:SS"Z"'::text) AS "timestamp", u.name AS "user", u.uid AS uid, (((n.latitude)::numeric / '10000000'::numeric))::numeric(10,7) AS lat, (((n.longitude)::numeric / '10000000'::numeric))::numeric(10,7) AS lon), (xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t.k AS k, t.v AS v)))))), n.id
-              Sort Key: n.id
+        Buffers: shared hit=436894 read=1504
+        ->  Sort  (cost=4079850.96..4105418.46 rows=10227000 width=40) (actual time=2761.824..2765.697 rows=40472 loops=1)
+              Output: (XMLELEMENT(NAME node, XMLATTRIBUTES((n.node).id AS id, (n.node).visible AS visible, (n.node).version AS version, (n.node).changeset AS changeset, to_char((n.node)."timestamp", 'YYYY-MM-DD"T"HH24:MI:SS"Z"'::text) AS "timestamp", (n.node)."user" AS "user", (n.node).uid AS uid, ((n.node).lat)::numeric(10,7) AS lat, ((n.node).lon)::numeric(10,7) AS lon), ((n.node).tags)::xml)), ((n.node).id)
+              Sort Key: ((n.node).id)
               Sort Method: quicksort  Memory: 12698kB
-              Buffers: shared hit=670160
-              ->  Nested Loop  (cost=18.48..172206.29 rows=14252 width=40) (actual time=472.308..871.862 rows=40472 loops=1)
-                    Output: XMLELEMENT(NAME node, XMLATTRIBUTES(n.id AS id, n.visible AS visible, n.version AS version, n.changeset_id AS changeset, to_char(n."timestamp", 'YYYY-MM-DD"T"HH24:MI:SS"Z"'::text) AS "timestamp", u.name AS "user", u.uid AS uid, (((n.latitude)::numeric / '10000000'::numeric))::numeric(10,7) AS lat, (((n.longitude)::numeric / '10000000'::numeric))::numeric(10,7) AS lon), (xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t.k AS k, t.v AS v))))), n.id
-                    Buffers: shared hit=670157
-                    ->  Hash Join  (cost=6.50..825.99 rows=14252 width=81) (actual time=472.176..491.917 rows=40472 loops=1)
-                          Output: n.id, n.visible, n.version, n.changeset_id, n."timestamp", n.latitude, n.longitude, u.name, u.uid
-                          Hash Cond: (n.changeset_id = u.changeset_id)
-                          Buffers: shared hit=546789
-                          ->  CTE Scan on all_request_nodes n  (cost=0.00..285.04 rows=14252 width=41) (actual time=361.747..368.157 rows=40472 loops=1)
-                                Output: n.id, n.visible, n.version, n.changeset_id, n."timestamp", n.latitude, n.longitude
-                                Buffers: shared hit=542196
-                          ->  Hash  (cost=4.00..4.00 rows=200 width=48) (actual time=110.407..110.407 rows=1970 loops=1)
-                                Output: u.name, u.uid, u.changeset_id
-                                Buckets: 2048 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 132kB
-                                Buffers: shared hit=4593
-                                ->  CTE Scan on all_request_users u  (cost=0.00..4.00 rows=200 width=48) (actual time=100.388..110.060 rows=1970 loops=1)
-                                      Output: u.name, u.uid, u.changeset_id
-                                      Buffers: shared hit=4593
-                    ->  Aggregate  (cost=11.98..11.99 rows=1 width=32) (actual time=0.002..0.002 rows=1 loops=40472)
-                          Output: xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t.k AS k, t.v AS v)))
-                          Buffers: shared hit=123368
-                          ->  Index Scan using current_node_tags_pkey on public.current_node_tags t  (cost=0.42..11.97 rows=3 width=23) (actual time=0.001..0.001 rows=0 loops=40472)
-                                Output: t.node_id, t.k, t.v
-                                Index Cond: (t.node_id = n.id)
-                                Buffers: shared hit=123368
-  ->  Subquery Scan on ways  (cost=46614.15..46628.08 rows=1114 width=32) (actual time=306.197..307.921 rows=7725 loops=1)
+              Buffers: shared hit=436894 read=1504
+              ->  CTE Scan on all_request_nodes n  (cost=0.00..2889127.50 rows=10227000 width=40) (actual time=1427.179..2733.890 rows=40472 loops=1)
+                    Output: XMLELEMENT(NAME node, XMLATTRIBUTES((n.node).id AS id, (n.node).visible AS visible, (n.node).version AS version, (n.node).changeset AS changeset, to_char((n.node)."timestamp", 'YYYY-MM-DD"T"HH24:MI:SS"Z"'::text) AS "timestamp", (n.node)."user" AS "user", (n.node).uid AS uid, ((n.node).lat)::numeric(10,7) AS lat, ((n.node).lon)::numeric(10,7) AS lon), ((n.node).tags)::xml), (n.node).id
+                    Buffers: shared hit=436891 read=1504
+  ->  Subquery Scan on ways  (cost=125.70..26581.50 rows=1706000 width=32) (actual time=3.067..1873.317 rows=7725 loops=1)
         Output: (ways.line)::text
-        Buffers: shared hit=62509
-        ->  Sort  (cost=46614.15..46616.94 rows=1114 width=40) (actual time=306.195..307.149 rows=7725 loops=1)
-              Output: (XMLELEMENT(NAME way, XMLATTRIBUTES(w.id AS id, w.visible AS visible, w.version AS version, w.changeset_id AS changeset, to_char(w."timestamp", 'YYYY-MM-DD"T"HH24:MI:SS"Z"'::text) AS "timestamp", u_1.name AS "user", u_1.uid AS uid), (xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t_1.k AS k, t_1.v AS v)))), (xmlagg(XMLELEMENT(NAME nd, XMLATTRIBUTES(t_2.node_id AS ref)) ORDER BY t_2.sequence_id)))), w.id
-              Sort Key: w.id
-              Sort Method: quicksort  Memory: 5246kB
-              Buffers: shared hit=62509
-              ->  Nested Loop  (cost=48.17..46557.78 rows=1114 width=40) (actual time=0.837..302.316 rows=7725 loops=1)
-                    Output: XMLELEMENT(NAME way, XMLATTRIBUTES(w.id AS id, w.visible AS visible, w.version AS version, w.changeset_id AS changeset, to_char(w."timestamp", 'YYYY-MM-DD"T"HH24:MI:SS"Z"'::text) AS "timestamp", u_1.name AS "user", u_1.uid AS uid), (xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t_1.k AS k, t_1.v AS v)))), (xmlagg(XMLELEMENT(NAME nd, XMLATTRIBUTES(t_2.node_id AS ref)) ORDER BY t_2.sequence_id))), w.id
-                    Buffers: shared hit=62509
-                    ->  Nested Loop  (cost=20.25..15424.26 rows=1114 width=105) (actual time=0.632..90.935 rows=7725 loops=1)
-                          Output: w.id, w.visible, w.version, w.changeset_id, w."timestamp", u_1.name, u_1.uid, (xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t_1.k AS k, t_1.v AS v))))
-                          Buffers: shared hit=31103
-                          ->  Hash Join  (cost=6.50..70.56 rows=1114 width=73) (actual time=0.553..5.177 rows=7725 loops=1)
-                                Output: w.id, w.visible, w.version, w.changeset_id, w."timestamp", u_1.name, u_1.uid
-                                Hash Cond: (w.changeset_id = u_1.changeset_id)
-                                ->  CTE Scan on all_request_ways w  (cost=0.00..22.28 rows=1114 width=33) (actual time=0.001..1.432 rows=7725 loops=1)
-                                      Output: w.id, w.visible, w.version, w.changeset_id, w."timestamp"
-                                ->  Hash  (cost=4.00..4.00 rows=200 width=48) (actual time=0.540..0.540 rows=1970 loops=1)
-                                      Output: u_1.name, u_1.uid, u_1.changeset_id
-                                      Buckets: 2048 (originally 1024)  Batches: 1 (originally 1)  Memory Usage: 132kB
-                                      ->  CTE Scan on all_request_users u_1  (cost=0.00..4.00 rows=200 width=48) (actual time=0.001..0.207 rows=1970 loops=1)
-                                            Output: u_1.name, u_1.uid, u_1.changeset_id
-                          ->  Aggregate  (cost=13.75..13.76 rows=1 width=32) (actual time=0.011..0.011 rows=1 loops=7725)
-                                Output: xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t_1.k AS k, t_1.v AS v)))
-                                Buffers: shared hit=31103
-                                ->  Index Scan using current_way_tags_pkey on public.current_way_tags t_1  (cost=0.42..13.74 rows=4 width=20) (actual time=0.002..0.003 rows=3 loops=7725)
-                                      Output: t_1.way_id, t_1.k, t_1.v
-                                      Index Cond: (t_1.way_id = w.id)
-                                      Buffers: shared hit=31103
-                    ->  Aggregate  (cost=27.92..27.93 rows=1 width=32) (actual time=0.020..0.020 rows=1 loops=7725)
-                          Output: xmlagg(XMLELEMENT(NAME nd, XMLATTRIBUTES(t_2.node_id AS ref)) ORDER BY t_2.sequence_id)
-                          Buffers: shared hit=31406
-                          ->  Index Scan using current_way_nodes_pkey on public.current_way_nodes t_2  (cost=0.42..27.89 rows=12 width=16) (actual time=0.002..0.003 rows=7 loops=7725)
-                                Output: t_2.way_id, t_2.node_id, t_2.sequence_id
-                                Index Cond: (t_2.way_id = w.id)
-                                Buffers: shared hit=31406
-  ->  Subquery Scan on relations  (cost=7569.38..7571.02 rows=131 width=32) (actual time=22.907..22.951 rows=143 loops=1)
+        Buffers: shared hit=132284
+        ->  Result  (cost=125.70..9521.50 rows=1706000 width=40) (actual time=3.067..1869.148 rows=7725 loops=1)
+              Output: (get_way_by_id(w.id))::xml, w.id
+              Buffers: shared hit=132284
+              ->  Sort  (cost=125.70..129.97 rows=1706 width=8) (actual time=1.251..5.399 rows=7725 loops=1)
+                    Output: w.id
+                    Sort Key: w.id
+                    Sort Method: quicksort  Memory: 555kB
+                    ->  CTE Scan on all_request_ways w  (cost=0.00..34.12 rows=1706 width=8) (actual time=0.006..0.648 rows=7725 loops=1)
+                          Output: w.id
+  ->  Subquery Scan on relations  (cost=145.72..30416.36 rows=1952000 width=32) (actual time=49.082..96.838 rows=143 loops=1)
         Output: (relations.line)::text
-        Buffers: shared hit=1718
-        ->  Sort  (cost=7569.38..7569.71 rows=131 width=40) (actual time=22.906..22.931 rows=143 loops=1)
-              Output: (XMLELEMENT(NAME relation, XMLATTRIBUTES(r.id AS id, r.visible AS visible, r.version AS version, r.changeset_id AS changeset, to_char(r."timestamp", 'YYYY-MM-DD"T"HH24:MI:SS"Z"'::text) AS "timestamp", u_2.name AS "user", u_2.uid AS uid), (xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t_3.k AS k, t_3.v AS v)))), (xmlagg(XMLELEMENT(NAME member, XMLATTRIBUTES(CASE t_4.member_type WHEN 'Way'::nwr_enum THEN 'way'::text WHEN 'Relation'::nwr_enum THEN 'relation'::text WHEN 'Node'::nwr_enum THEN 'node'::text ELSE NULL::text END AS type, t_4.member_id AS ref, t_4.member_role AS role)) ORDER BY t_4.sequence_id)))), r.id
-              Sort Key: r.id
-              Sort Method: quicksort  Memory: 400kB
-              Buffers: shared hit=1718
-              ->  Nested Loop  (cost=61.86..7564.77 rows=131 width=40) (actual time=0.168..22.765 rows=143 loops=1)
-                    Output: XMLELEMENT(NAME relation, XMLATTRIBUTES(r.id AS id, r.visible AS visible, r.version AS version, r.changeset_id AS changeset, to_char(r."timestamp", 'YYYY-MM-DD"T"HH24:MI:SS"Z"'::text) AS "timestamp", u_2.name AS "user", u_2.uid AS uid), (xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t_3.k AS k, t_3.v AS v)))), (xmlagg(XMLELEMENT(NAME member, XMLATTRIBUTES(CASE t_4.member_type WHEN 'Way'::nwr_enum THEN 'way'::text WHEN 'Relation'::nwr_enum THEN 'relation'::text WHEN 'Node'::nwr_enum THEN 'node'::text ELSE NULL::text END AS type, t_4.member_id AS ref, t_4.member_role AS role)) ORDER BY t_4.sequence_id))), r.id
-                    Buffers: shared hit=1718
-                    ->  Nested Loop  (cost=17.87..1797.50 rows=131 width=105) (actual time=0.077..2.839 rows=143 loops=1)
-                          Output: r.id, r.visible, r.version, r.changeset_id, r."timestamp", u_2.name, u_2.uid, (xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t_3.k AS k, t_3.v AS v))))
-                          Buffers: shared hit=438
-                          ->  Hash Join  (cost=4.26..10.32 rows=131 width=73) (actual time=0.059..0.411 rows=143 loops=1)
-                                Output: r.id, r.visible, r.version, r.changeset_id, r."timestamp", u_2.name, u_2.uid
-                                Hash Cond: (u_2.changeset_id = r.changeset_id)
-                                ->  CTE Scan on all_request_users u_2  (cost=0.00..4.00 rows=200 width=48) (actual time=0.001..0.157 rows=1970 loops=1)
-                                      Output: u_2.changeset_id, u_2.name, u_2.uid
-                                ->  Hash  (cost=2.62..2.62 rows=131 width=33) (actual time=0.024..0.024 rows=143 loops=1)
-                                      Output: r.id, r.visible, r.version, r.changeset_id, r."timestamp"
-                                      Buckets: 1024  Batches: 1  Memory Usage: 19kB
-                                      ->  CTE Scan on all_request_relations r  (cost=0.00..2.62 rows=131 width=33) (actual time=0.001..0.010 rows=143 loops=1)
-                                            Output: r.id, r.visible, r.version, r.changeset_id, r."timestamp"
-                          ->  Aggregate  (cost=13.61..13.62 rows=1 width=32) (actual time=0.016..0.016 rows=1 loops=143)
-                                Output: xmlagg(XMLELEMENT(NAME tag, XMLATTRIBUTES(t_3.k AS k, t_3.v AS v)))
-                                Buffers: shared hit=438
-                                ->  Index Scan using current_relation_tags_pkey on public.current_relation_tags t_3  (cost=0.28..13.60 rows=4 width=23) (actual time=0.002..0.003 rows=4 loops=143)
-                                      Output: t_3.relation_id, t_3.k, t_3.v
-                                      Index Cond: (t_3.relation_id = r.id)
-                                      Buffers: shared hit=438
-                    ->  Aggregate  (cost=43.99..44.00 rows=1 width=32) (actual time=0.130..0.130 rows=1 loops=143)
-                          Output: xmlagg(XMLELEMENT(NAME member, XMLATTRIBUTES(CASE t_4.member_type WHEN 'Way'::nwr_enum THEN 'way'::text WHEN 'Relation'::nwr_enum THEN 'relation'::text WHEN 'Node'::nwr_enum THEN 'node'::text ELSE NULL::text END AS type, t_4.member_id AS ref, t_4.member_role AS role)) ORDER BY t_4.sequence_id)
-                          Buffers: shared hit=1280
-                          ->  Index Only Scan using current_relation_members_pkey on public.current_relation_members t_4  (cost=0.41..43.78 rows=21 width=20) (actual time=0.003..0.014 rows=33 loops=143)
-                                Output: t_4.relation_id, t_4.member_type, t_4.member_id, t_4.member_role, t_4.sequence_id
-                                Index Cond: (t_4.relation_id = r.id)
-                                Heap Fetches: 4663
-                                Buffers: shared hit=1273
+        Buffers: shared hit=3621
+        ->  Result  (cost=145.72..10896.36 rows=1952000 width=40) (actual time=49.080..96.784 rows=143 loops=1)
+              Output: (get_relation_by_id(r.id))::xml, r.id
+              Buffers: shared hit=3621
+              ->  Sort  (cost=145.72..150.60 rows=1952 width=8) (actual time=46.998..47.044 rows=143 loops=1)
+                    Output: r.id
+                    Sort Key: r.id
+                    Sort Method: quicksort  Memory: 31kB
+                    Buffers: shared hit=346
+                    ->  CTE Scan on all_request_relations r  (cost=0.00..39.04 rows=1952 width=8) (actual time=46.928..46.971 rows=143 loops=1)
+                          Output: r.id
+                          Buffers: shared hit=346
   ->  Result  (cost=0.00..0.01 rows=1 width=32) (actual time=0.000..0.000 rows=1 loops=1)
         Output: '</osm>'::text
-Planning time: 3.082 ms
-Execution time: 1239.217 ms
+Planning time: 2.170 ms
+Execution time: 4753.492 ms

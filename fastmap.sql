@@ -8,7 +8,7 @@
 \pset tuples_only on
 begin read only;
 -- This one is for debugging using http://tatiyants.com/pev/#/plans/new
---#explain ( analyze, costs, verbose, buffers, format json )
+--jsonexplain ( analyze, costs, verbose, buffers, format json )
 --explain ( analyze, costs, verbose, buffers )
 with params as (
     select
@@ -17,33 +17,24 @@ with params as (
         27.671985626220707 :: float as maxlon,
         53.886459293813054 :: float as maxlat
 ), direct_nodes as (
-    select n.id
-    from
-        current_nodes n,
-        params p
-    where
-        point(longitude :: float / 1e7 :: float, latitude :: float / 1e7 :: float) <@
-        box(point(minlon, minlat), point(maxlon, maxlat))
-        -- and n.tile in (...) - dropped in favor of SP-GiST, can be returned
-        --         and n.latitude between minlat and maxlat
-        --         and n.longitude between minlon and maxlon
-        and n.visible
+    select get_nodes_by_box(minlon, minlat, maxlon, maxlat) node
+    from params
 ), all_request_ways as (
     select distinct c.way_id as id
-    from
-        direct_nodes n
-        join current_way_nodes c on (c.node_id = n.id)
+    from direct_nodes n
+        join current_way_nodes c on (c.node_id = (n.node).id)
 ), all_request_nodes as (
-    select distinct id
-    from (
-             select c.node_id as id
-             from
-                 all_request_ways w
-                 join current_way_nodes c on (c.way_id = w.id)
-             union
-             select n.id
-             from direct_nodes n
-         ) nodes
+    select distinct on (c.node_id) get_node_by_id(c.node_id) as node
+    from
+        all_request_ways w
+        join current_way_nodes c on (c.way_id = w.id)
+    where c.node_id not in (
+        select (n.node).id
+        from direct_nodes n
+    )
+    union all
+    select *
+    from direct_nodes n
 ), relations_from_ways_and_nodes as (
     select distinct m.relation_id as id
     from
@@ -54,9 +45,9 @@ with params as (
             from all_request_ways
             union all
             select
-                id,
+                (n.node).id,
                 'Node' :: nwr_enum as type
-            from all_request_nodes
+            from all_request_nodes n
         ) wn
         join current_relation_members m on (wn.id = m.member_id and wn.type = m.member_type)
 ), all_request_relations as (
@@ -80,9 +71,9 @@ union all
 -- nodes
 select line :: text
 from (
-         select get_node_by_id(n.id) :: xml as line
+         select n.node :: xml as line
          from all_request_nodes n
-         order by n.id
+         order by (n.node).id
      ) nodes
 union all
 -- ways
