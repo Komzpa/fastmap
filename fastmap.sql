@@ -81,15 +81,15 @@ with params as (
         ( -- we first know about all the ways, that's why they're earlier in union
             select changeset_id
             from all_request_ways
-            union all
+            union
             select changeset_id
             from all_request_nodes
-            union all
+            union
             select changeset_id
             from all_request_relations
         ) as rc
         join changesets c on (rc.changeset_id = c.id)
-        left join users u on (c.user_id = u.id)
+        left join users u on (c.user_id = u.id and u.data_public)
     order by changeset_id
 )
 select line

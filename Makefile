@@ -1,10 +1,13 @@
 all: explain reference
 
-explain:
+reindex:
+	psql -f index.sql
+
+explain: reindex
 	rm explain_analyze_buffers.txt -rf
 	cat fastmap.sql | sed s/--explain/explain/g | psql -q > explain_analyze_buffers.txt
 
-reference:
+reference: reindex
 	rm reference.osm -rf
 	time psql -q -f fastmap.sql > reference.osm
 
