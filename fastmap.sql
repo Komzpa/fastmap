@@ -29,18 +29,10 @@ with params as (
         --         and n.longitude between minlon and maxlon
         and n.visible
 ), all_request_ways as (
-    select
-        distinct on (id)
-        w.id,
-        w.visible,
-        w.version,
-        w.changeset_id,
-        w.timestamp
+    select distinct c.way_id as id
     from
         direct_nodes n
         join current_way_nodes c on (c.node_id = n.id)
-        join current_ways w on (w.id = c.way_id)
-    where w.visible
 ), all_request_nodes as (
     select distinct id
     from (
@@ -100,10 +92,7 @@ with params as (
         u.display_name as name,
         u.id           as uid
     from
-        (-- we first know about all the ways, that's why they're earlier in union
-            select changeset_id
-            from all_request_ways
-            union
+        (
             select changeset_id
             from all_request_relations
         ) as rc
@@ -132,51 +121,10 @@ union all
 -- ways
 select line :: text
 from (
-         select
-             xmlelement(
-                 name way,
-                 xmlattributes (
-                 id as id,
-                 visible as visible,
-                 version as version,
-                 w.changeset_id as changeset,
-                 to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                 u.name as user,
-                 u.uid as uid
-             ),
-             wt.tags,
-             nds.nodes
-     ) as line
-from all_request_ways w
-join all_request_users u on ( w.changeset_id = u.changeset_id)
-join lateral (
-select xmlagg(
-xmlelement(
-name tag,
-xmlattributes (
-k as k,
-v as v
-)
-)
-) as tags
-from current_way_tags t
-where t.way_id = w.id
-) wt on true
-join lateral (
-select xmlagg(
-xmlelement(
-name nd,
-xmlattributes (
-node_id as ref
-)
-)
-order by sequence_id
-) as nodes
-from current_way_nodes t
-where t.way_id = w.id
-) nds on true
-order by w.id
-) ways
+         select get_way_by_id(w.id) :: xml as line
+         from all_request_ways w
+         order by w.id
+     ) ways
 union all
 -- relations
 select line :: text
