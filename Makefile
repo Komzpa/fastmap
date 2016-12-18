@@ -7,6 +7,8 @@ import_types:
 	psql -f types/tag.sql
 	psql -f types/node.sql
 	psql -f types/way.sql
+	psql -f types/member.sql
+	psql -f types/relation.sql
 
 import_functions: import_types
 	cat functions/*.sql | psql

@@ -45,12 +45,7 @@ with params as (
              from direct_nodes n
          ) nodes
 ), relations_from_ways_and_nodes as (
-    select distinct on (id)
-        r.id,
-        r.visible,
-        r.version,
-        r.changeset_id,
-        r.timestamp
+    select distinct m.relation_id as id
     from
         (
             select
@@ -64,41 +59,13 @@ with params as (
             from all_request_nodes
         ) wn
         join current_relation_members m on (wn.id = m.member_id and wn.type = m.member_type)
-        join current_relations r on (m.relation_id = r.id)
-    where r.visible
 ), all_request_relations as (
-    select
-        r.id,
-        r.visible,
-        r.version,
-        r.changeset_id,
-        r.timestamp
+    select r.id
     from relations_from_ways_and_nodes r
     union
-    select
-        r.id,
-        r.visible,
-        r.version,
-        r.changeset_id,
-        r.timestamp
+    select rm.relation_id
     from relations_from_ways_and_nodes r2
         join current_relation_members rm on (r2.id = rm.member_id and rm.member_type = 'Relation')
-        join current_relations r on (r.id = rm.relation_id)
-    where r.visible
-), all_request_users as (
-    select
-        distinct on (changeset_id)
-        changeset_id,
-        u.display_name as name,
-        u.id           as uid
-    from
-        (
-            select changeset_id
-            from all_request_relations
-        ) as rc
-        join changesets c on (rc.changeset_id = c.id)
-        left join users u on (c.user_id = u.id and u.data_public)
-    order by changeset_id
 )
 select line
 from (
@@ -130,57 +97,10 @@ union all
 select line :: text
 from
     (
-        select
-            xmlelement(
-                name relation,
-                xmlattributes (
-                id as id,
-                visible as visible,
-                version as version,
-                r.changeset_id as changeset,
-                to_char(timestamp, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as timestamp,
-                u.name as user,
-                u.uid as uid
-            ),
-            rt.tags,
-            mbr.nodes
-    ) line
-from all_request_relations r
-join all_request_users u on (r.changeset_id = u.changeset_id)
-join lateral (
-select xmlagg(
-xmlelement(
-name tag,
-xmlattributes (
-k as k,
-v as v
-)
-)
-) as tags
-from current_relation_tags t
-where t.relation_id = r.id
-) rt on true
-join lateral (
-select xmlagg(
-xmlelement(
-name member,
-xmlattributes (
-case member_type
-when 'Way' then 'way'
-when 'Relation' then 'relation'
-when 'Node' then 'node'
-end as type,
-member_id as ref,
-member_role as role
-)
-)
-order by sequence_id
-) as nodes
-from current_relation_members t
-where t.relation_id = r.id
-) mbr on true
-order by r.id
-) relations
+        select get_relation_by_id(r.id) :: xml as line
+        from all_request_relations r
+        order by r.id
+    ) relations
 union all
 -- XML footer
 select '</osm>'
