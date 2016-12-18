@@ -14,7 +14,7 @@ select
     (
         select array_agg(
             (k, v) :: osm_tag
-        order by k, v)
+        order by k)
         from current_relation_tags t
         where t.relation_id = p_id
     ),

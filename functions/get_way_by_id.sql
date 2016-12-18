@@ -14,7 +14,7 @@ select
     (
         select array_agg(
             (k, v) :: osm_tag
-        order by k, v)
+        order by k)
         from current_way_tags t
         where t.way_id = p_id
     ),

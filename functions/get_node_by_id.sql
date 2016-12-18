@@ -13,10 +13,11 @@ select
     u.id,
     n.latitude / 1e7 :: float,
     n.longitude / 1e7 :: float,
+    --n.tags
     (
         select array_agg(
             (k, v) :: osm_tag
-        order by k, v)
+        order by k)
         from current_node_tags t
         where t.node_id = p_id
     )
