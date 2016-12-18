@@ -3,11 +3,18 @@ all: explain reference
 reindex:
 	psql -f index.sql
 
-explain: reindex
+import_types:
+	psql -f types/tag.sql
+	psql -f types/node.sql
+
+import_functions: import_types
+	cat functions/*.sql | psql
+
+explain: import_functions reindex
 	rm explain_analyze_buffers.txt -rf
 	cat fastmap.sql | sed s/--explain/explain/g | psql -q > explain_analyze_buffers.txt
 
-reference: reindex
+reference: import_functions reindex
 	rm reference.osm -rf
 	time psql -q -f fastmap.sql > reference.osm
 

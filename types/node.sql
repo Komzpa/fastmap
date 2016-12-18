@@ -9,7 +9,7 @@ create type osm_node as (
     uid         bigint,
     lat         float,
     lon         float,
-    tags        jsonb
+    tags        osm_tag []
 );
 
 create function _osm_node_to_xml(
@@ -30,18 +30,7 @@ select
         (p_node).lat :: numeric(10, 7) as lat,
         (p_node).lon :: numeric(10, 7) as lon
     ),
-    (
-        select xmlagg(
-            xmlelement(
-                name tag,
-                xmlattributes (
-                p.key as k,
-                p.value as v
-                )
-            )
-        )
-        from jsonb_each_text((p_node).tags) p
-    )
+    (p_node).tags :: xml
 )
 $$;
 

@@ -124,7 +124,7 @@ union all
 -- nodes
 select line :: text
 from (
-         select get_node_by_id(n.id) :: text as line
+         select get_node_by_id(n.id) :: xml as line
          from all_request_nodes n
          order by n.id
      ) nodes

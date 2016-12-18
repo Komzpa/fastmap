@@ -14,7 +14,9 @@ select
     n.latitude / 1e7 :: float,
     n.longitude / 1e7 :: float,
     (
-        select jsonb_object_agg(k, v)
+        select array_agg(
+            (k, v) :: osm_tag
+        order by k, v)
         from current_node_tags t
         where t.node_id = p_id
     )
